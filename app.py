@@ -28,7 +28,7 @@ uploaded_file = st.file_uploader("나이스 성적 분포 파일(XLSX, CSV)을 �
 
 if uploaded_file is not None:
     try:
-        # 데이터 읽기 로직
+        # 데이터 읽기
         if uploaded_file.name.endswith('.csv'):
             try:
                 df_raw = pd.read_csv(uploaded_file, header=None, encoding='cp949')
@@ -49,7 +49,7 @@ if uploaded_file is not None:
             st.error("⚠️ 데이터 헤더를 찾을 수 없습니다.")
             st.stop()
 
-        # 데이터 추출 (빈칸 시 중단)
+        # 데이터 추출 (빈 행 발생 시 중단)
         extracted_rows = []
         for i in range(data_start_idx, len(df_raw)):
             row = df_raw.iloc[i]
@@ -70,13 +70,12 @@ if uploaded_file is not None:
         num_cols = 4
         num_rows = math.ceil(num_subjects / num_cols)
 
-        # 서브플롯 제목 (폰트 크기 고려하여 여유있게 배치)
         subplot_titles = [f"<b>{row['과목']}</b> (평균:{row['평균']})" for _, row in df.iterrows()]
 
         fig = make_subplots(
             rows=num_rows, cols=num_cols,
             subplot_titles=subplot_titles,
-            vertical_spacing=0.1,   # 텍스트가 커지므로 간격을 더 넓힘
+            vertical_spacing=0.1,
             horizontal_spacing=0.07 
         )
 
@@ -99,7 +98,6 @@ if uploaded_file is not None:
                     textposition='auto',
                     marker_color=colors,
                     showlegend=False,
-                    # 막대 위 숫자 폰트 크기 (기존 대비 약 2배)
                     textfont=dict(size=18, color='black', family="Arial Black")
                 ),
                 row=curr_row, col=curr_col
@@ -112,29 +110,31 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-        # 5. 전체 레이아웃 및 폰트 설정
+        # 5. 전체 레이아웃 (센터 정렬 수정)
         fig.update_layout(
             title=dict(
                 text=f"✨ {selected_year}학년도 {selected_semester} 성취도 분포 리포트",
-                x=0.5,
-                font=dict(size=40, color="black") # 메인 제목 폰트 크기 대폭 확대
+                x=0.5,           # 0.5는 가로 중앙을 의미
+                y=0.97,          # 세로 상단 위치
+                xanchor='center', # 중앙 고정 필수
+                yanchor='top',
+                font=dict(size=40, color="black")
             ),
-            height=450 * num_rows, # 텍스트가 커졌으므로 각 행의 높이를 늘림
-            width=1600,            # 전체 너비도 충분히 확보
+            height=480 * num_rows, # 여백을 위해 높이 소폭 증가
+            width=1600,
             template="plotly_white",
-            margin=dict(t=150, b=100, l=100, r=100),
-            # 전체 기본 폰트 설정 (축 숫자 등)
+            margin=dict(t=180, b=100, l=100, r=100), # 상단 여백(t)을 충분히 주어 제목 공간 확보
             font=dict(size=18, color="black") 
         )
 
-        # 서브플롯 제목(과목명) 폰트 크기 조절
+        # 과목명 폰트 및 정렬
         fig.update_annotations(font=dict(size=24, color="black"))
 
-        # X, Y축 라벨 폰트 조절
-        fig.update_xaxes(tickfont=dict(size=18), title_font=dict(size=20))
-        fig.update_yaxes(tickfont=dict(size=18), title_font=dict(size=20), range=[0, 105])
+        # 축 설정
+        fig.update_xaxes(tickfont=dict(size=18))
+        fig.update_yaxes(tickfont=dict(size=18), range=[0, 105])
 
-        # 6. 화면 출력
+        # 6. 화면 출력 및 다운로드
         st.plotly_chart(
             fig, 
             use_container_width=True, 
@@ -142,8 +142,8 @@ if uploaded_file is not None:
                 'displaylogo': False,
                 'toImageButtonOptions': {
                     'format': 'png',
-                    'filename': f"{selected_year}_{selected_semester}_성취도분포_대형",
-                    'scale': 2 # 저장 시 선명도 2배
+                    'filename': f"{selected_year}_{selected_semester}_성취도분포",
+                    'scale': 2
                 }
             }
         )
@@ -151,4 +151,4 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ 분석 오류: {e}")
 else:
-    st.warning("파일을 업로드하면 고해상도 리포트가 생성됩니다.")
+    st.warning("파일을 업로드하면 센터가 정렬된 리포트가 생성됩니다.")
