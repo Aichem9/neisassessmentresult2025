@@ -122,4 +122,34 @@ if uploaded_file is not None:
             ),
             # 폰트가 커진만큼 한 행당 높이를 700px로 대폭 확대 (겹침 해결의 핵심)
             height=700 * num_rows, 
-            width=2
+            width=2400,            # 전체 너비 확대
+            template="plotly_white",
+            margin=dict(t=300, b=150, l=150, r=150), # 상단 여백을 300으로 늘려 메인 제목 공간 확보
+            font=dict(size=25, color="black") 
+        )
+
+        # 과목명(서브플롯 제목) 위치 및 크기 조정
+        fig.update_annotations(font=dict(size=40, color="black"), yshift=40) # yshift로 차트와의 간격 확보
+
+        # 축 숫자 크기 조정
+        fig.update_xaxes(tickfont=dict(size=30))
+        fig.update_yaxes(tickfont=dict(size=30), range=[0, 110]) # 상단 수치 겹침 방지 위해 range 110
+
+        # 6. 화면 출력
+        st.plotly_chart(
+            fig, 
+            use_container_width=True, 
+            config={
+                'displaylogo': False,
+                'toImageButtonOptions': {
+                    'format': 'png',
+                    'filename': f"{selected_year}_{selected_semester}_성취도분포",
+                    'scale': 1.5 # 전체 사이즈가 이미 크므로 scale은 1.5로 충분
+                }
+            }
+        )
+
+    except Exception as e:
+        st.error(f"❌ 분석 오류: {e}")
+else:
+    st.info("💡 나이스에서 받은 파일을 업로드해 주세요.")
