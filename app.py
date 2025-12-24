@@ -46,7 +46,7 @@ if uploaded_file is not None:
                 break
         
         if data_start_idx == -1:
-            st.error("⚠️ 데이터 헤더를 찾을 수 없습니다.")
+            st.error("⚠️ 데이터 헤더를 찾을 수 없습니다. 나이스 원본 파일을 확인해 주세요.")
             st.stop()
 
         # 데이터 추출 (빈 행 발생 시 중단)
@@ -70,15 +70,11 @@ if uploaded_file is not None:
         num_cols = 4
         num_rows = math.ceil(num_subjects / num_cols)
 
-        # 서브플롯 제목 설정
-        subplot_titles = [f"<b>{row['과목']}</b>" for _, row in df.iterrows()]
-
-        # vertical_spacing을 더 키워 차트 간 위아래 거리를 확보 (0.15~0.2)
+        # 과목명을 내부에 넣기 위해 subplot_titles는 비워둡니다.
         fig = make_subplots(
             rows=num_rows, cols=num_cols,
-            subplot_titles=subplot_titles,
-            vertical_spacing= 0.15 if num_rows > 1 else 0.1, 
-            horizontal_spacing=0.08 
+            vertical_spacing=0.08,
+            horizontal_spacing=0.06 
         )
 
         categories = ['A', 'B', 'C', 'D', 'E']
@@ -91,6 +87,7 @@ if uploaded_file is not None:
             total = sum([row[c] for c in categories])
             percents = [(row[cat] / total * 100) if total > 0 else 0 for cat in categories]
 
+            # 막대 그래프 추가
             fig.add_trace(
                 go.Bar(
                     x=categories, y=percents,
@@ -98,43 +95,58 @@ if uploaded_file is not None:
                     textposition='auto',
                     marker_color=colors,
                     showlegend=False,
-                    textfont=dict(size=24, color='black', family="Arial Black")
+                    textfont=dict(size=22, color='black', family="Arial Black")
                 ),
+                row=curr_row, col=curr_col
+            )
+
+            # 과목명을 그래프 내부(상단 중앙)에 배치 (폰트 크기 축소)
+            fig.add_annotation(
+                text=f"<b>{row['과목']}</b>",
+                xref=f"x{idx+1} domain", yref=f"y{idx+1} domain",
+                x=0.5, y=0.95, # 내부 상단 중앙
+                showarrow=False,
+                font=dict(size=22, color="black"),
+                bgcolor="rgba(255,255,255,0.7)", # 배경을 살짝 투명하게 해서 막대와 겹쳐도 보이게 함
                 row=curr_row, col=curr_col
             )
 
             # 32.8% 보조선
             fig.add_shape(
                 type="line", x0=-0.5, x1=4.5, y0=32.8, y1=32.8,
-                line=dict(color="Red", width=3, dash="dash"),
+                line=dict(color="Red", width=2, dash="dash"),
                 row=curr_row, col=curr_col
             )
 
-        # 5. 전체 레이아웃 (겹침 방지 핵심 보정)
+        # 5. 전체 레이아웃 및 테두리 설정
         fig.update_layout(
             title=dict(
                 text=f"✨ {selected_year}학년도 {selected_semester} 성취도 분포 리포트",
                 x=0.5, y=0.98,
                 xanchor='center', yanchor='top',
-                font=dict(size=70, color="black")
+                font=dict(size=60, color="black")
             ),
-            # 행당 높이를 850px로 더 늘려 여유 공간 확보
-            height=850 * num_rows, 
-            width=2600, 
+            height=600 * num_rows, 
+            width=2400, 
             template="plotly_white",
-            # 상단 여백(t)을 500으로 대폭 늘려 메인 제목 공간 확보
-            margin=dict(t=500, b=200, l=150, r=150), 
-            font=dict(size=25, color="black") 
+            margin=dict(t=250, b=150, l=150, r=150),
+            font=dict(size=20, color="black") 
         )
 
-        # 과목명(서브플롯 제목) 위치 대폭 상향 조정 (yshift=60)
-        fig.update_annotations(font=dict(size=45, color="black"), yshift=60)
+        # 각 서브플롯에 테두리(Border) 추가 및 Y축 제목 설정
+        fig.update_xaxes(
+            showline=True, linewidth=2, linecolor='black', mirror=True, # 테두리 설정
+            tickfont=dict(size=25)
+        )
+        fig.update_yaxes(
+            showline=True, linewidth=2, linecolor='black', mirror=True, # 테두리 설정
+            title_text="인원수 비율", # Y축 제목 변경
+            title_font=dict(size=22),
+            tickfont=dict(size=25), 
+            range=[0, 110]
+        )
 
-        # 축 및 눈금 크기
-        fig.update_xaxes(tickfont=dict(size=35))
-        fig.update_yaxes(tickfont=dict(size=35), range=[0, 115]) # 상단 수치 안 잘리게 115로 확장
-
-        # 6. 화면 출력 및 다운로드
+        # 6. 화면 출력
         st.plotly_chart(
             fig, 
             use_container_width=True, 
@@ -143,7 +155,7 @@ if uploaded_file is not None:
                 'toImageButtonOptions': {
                     'format': 'png',
                     'filename': f"{selected_year}_{selected_semester}_성취도분포",
-                    'scale': 1.2 # 해상도는 충분히 크므로 scale은 낮춰서 용량 최적화
+                    'scale': 1.5
                 }
             }
         )
@@ -151,4 +163,4 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ 분석 오류: {e}")
 else:
-    st.info("💡 파일을 업로드하면 겹침 없이 선명한 리포트가 생성됩니다.")
+    st.info("💡 파일을 업로드하면 설정이 반영된 리포트가 생성됩니다.")
