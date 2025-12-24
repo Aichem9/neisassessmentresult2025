@@ -14,10 +14,14 @@ st.set_page_config(
 st.title("📊 과목별 성취도 분포 결과 시각화")
 st.markdown("#### 인창고 aichem9 제작")
 
-col1, col2 = st.columns(2)
+# 입력창 레이아웃 수정 (학년 선택 추가)
+col1, col2, col3 = st.columns(3)
 with col1:
     selected_year = st.selectbox("📅 학년도 선택", [2024, 2025, 2026, 2027], index=1)
 with col2:
+    # [추가] 학년 선택 드롭다운 (1~3학년)
+    selected_grade = st.selectbox("🙋 학년 선택", [1, 2, 3], index=0)
+with col3:
     selected_semester = st.selectbox("🏫 학기 선택", ["1학기", "2학기"], index=1)
 
 st.warning("📂 **나이스 > 성적조회/통계 > 학기말 성적통계 > 과목별성적분포표 > 조회 > XLS data** 형식으로 저장한 파일을 아래에 올려주세요.")
@@ -46,7 +50,7 @@ if uploaded_file is not None:
                 break
         
         if data_start_idx == -1:
-            st.error("⚠️ 데이터 헤더를 찾을 수 없습니다.")
+            st.error("⚠️ 데이터 헤더를 찾을 수 없습니다. 나이스 원본 파일을 확인해 주세요.")
             st.stop()
 
         # 데이터 추출
@@ -69,6 +73,8 @@ if uploaded_file is not None:
         num_subjects = len(df)
         num_cols = 4
         num_rows = math.ceil(num_subjects / num_cols)
+        
+        # 행 수에 따른 간격 자동 조정
         v_space = min(0.06, 0.9 / num_rows) if num_rows > 1 else 0.1
 
         fig = make_subplots(
@@ -100,15 +106,15 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-            # [수정] 과목명 폰트 크기 1.5배 확대 (18px -> 27px)
+            # 과목명 내부 삽입 (폰트 크기 27px)
             fig.add_annotation(
                 text=f"<b>{row['과목']}</b>",
                 xref="x domain", yref="y domain",
-                x=0.5, y=0.88,  # 폰트가 커졌으므로 위치를 약간 아래로 조정
+                x=0.5, y=0.88,
                 showarrow=False,
-                font=dict(size=27, color="black"), 
-                bgcolor="rgba(255,255,255,0.9)", # 배경 투명도를 낮춰 글자를 더 선명하게
-                bordercolor="black", # 과목명 박스에 얇은 테두리 추가
+                font=dict(size=27, color="black"),
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="black",
                 borderwidth=1,
                 row=curr_row, col=curr_col
             )
@@ -120,10 +126,10 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-        # 5. 전체 레이아웃
+        # 5. 전체 레이아웃 (제목에 학년 반영)
         fig.update_layout(
             title=dict(
-                text=f"✨ {selected_year}학년도 {selected_semester} 성취도 분포 리포트",
+                text=f"✨ {selected_year}학년도 {selected_grade}학년 {selected_semester} 성취도 분포 리포트",
                 x=0.5, y=0.98, xanchor='center', yanchor='top',
                 font=dict(size=55, color="black")
             ),
@@ -133,7 +139,7 @@ if uploaded_file is not None:
             margin=dict(t=220, b=120, l=130, r=100),
         )
 
-        # 테두리 및 축 설정
+        # 모든 서브플롯 테두리 및 축 설정
         fig.update_xaxes(
             showline=True, linewidth=2, linecolor='black', mirror=True,
             tickfont=dict(size=24)
@@ -154,7 +160,7 @@ if uploaded_file is not None:
                 'displaylogo': False,
                 'toImageButtonOptions': {
                     'format': 'png',
-                    'filename': f"{selected_year}_{selected_semester}_성취도분포_확대",
+                    'filename': f"{selected_year}_{selected_grade}학년_{selected_semester}_성취도분포",
                     'scale': 1.5
                 }
             }
@@ -163,4 +169,4 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ 분석 오류: {e}")
 else:
-    st.info("💡 파일을 업로드하시면 과목명이 강조된 리포트가 생성됩니다.")
+    st.info("💡 파일을 업로드하면 선택한 학년 정보가 포함된 리포트가 생성됩니다.")
