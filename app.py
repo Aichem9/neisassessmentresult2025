@@ -16,29 +16,31 @@ if uploaded_file:
     subject_rows = {}
     current_subject = None
 
-    # 핵심: 과목명 / 인원수 행 정확히 구분
     for i in range(5, len(df)):
         a_val = df.iloc[i, 0]
         bf_vals = df.iloc[i, 1:6]
 
-        # 과목명 행: A열 값 있고, B~F 모두 비어 있음
         if pd.notna(a_val) and bf_vals.isna().all():
-            current_subject = str(a_val)
+            current_subject = str(a_val).strip()
             subject_rows[current_subject] = []
 
-        # 인원수 행: B~F 중 숫자 하나라도 있음
         elif current_subject is not None:
             nums = pd.to_numeric(bf_vals, errors="coerce")
             if nums.notna().any():
                 subject_rows[current_subject].append(i)
 
+    subjects = list(subject_rows.keys())
+
+    if len(subjects) == 0:
+        st.error("과목을 인식하지 못했습니다. 엑셀 형식을 확인해주세요.")
+        st.stop()
+
     grades = ["A", "B", "C", "D", "E"]
     colors = ["#ff9999", "#66b3ff", "#99ff99", "#ffcc99", "#ff66cc"]
 
-    subjects = list(subject_rows.keys())
     n = len(subjects)
     cols = 4
-    rows = math.ceil(n / cols)
+    rows = max(1, math.ceil(n / cols))
 
     fig, axes = plt.subplots(rows, cols, figsize=(cols*4, rows*3))
     axes = axes.flatten()
