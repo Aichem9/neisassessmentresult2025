@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import streamlit.components.v1 as components
 
 # 1. 페이지 설정
 st.set_page_config(
@@ -9,34 +8,17 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 인쇄를 위한 CSS 설정 (인쇄 시 버튼 등 UI 숨기기) ---
-st.markdown("""
-    <style>
-    @media print {
-        .stButton, .stFileUploader, .stSelectbox, .stInfo, header, footer, .css-1dp56ee, .css-12oz5g7 {
-            display: none !important;
-        }
-        .main .block-container {
-            padding-top: 0 !important;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 # 2. 상단 입력 섹션
 st.title("📊 과목별 성취도 분포 결과 시각화")
 st.markdown("#### 인창고 aichem9 제작")
 
-input_col1, input_col2, input_col3 = st.columns([1, 1, 1])
+input_col1, input_col2 = st.columns(2)
 with input_col1:
     selected_year = st.selectbox("📅 학년도", [2024, 2025, 2026, 2027], index=1)
 with input_col2:
     selected_semester = st.selectbox("🏫 학기", ["1학기", "2학기"], index=1)
-with input_col3:
-    st.write("") # 간격 맞춤
-    if st.button("🖨️ 결과 전체 출력/PDF 저장"):
-        components.html("<script>window.print();</script>", height=0)
 
+st.info("💡 각 차트 우측 상단의 **카메라 아이콘**을 클릭하면 해당 차트를 이미지(PNG)로 다운로드할 수 있습니다.")
 st.divider()
 
 # 3. 파일 업로드
@@ -70,7 +52,7 @@ if uploaded_file is not None:
             row = df_raw.iloc[i]
             subject_name = str(row[0]).strip()
             
-            # 빈칸이 나오면 읽기 중단
+            # 빈칸이 나오면 읽기 중단 (사용자 요청 반영)
             if not subject_name or subject_name == 'nan' or subject_name == 'None' or subject_name == "":
                 break
             
@@ -117,22 +99,33 @@ if uploaded_file is not None:
                             line=dict(color="Red", width=2, dash="dash")
                         )
 
-                        # 그래프 제목에 학년도/학기 포함
+                        # 제목 설정
                         fig.update_layout(
                             title=dict(
-                                text=f"<b>{row['과목']}</b><br><span style='font-size:11px;'>{selected_year}년 {selected_semester} | 평균:{row['평균']} / 표편:{row['표준편차']}</span>",
+                                text=f"<b>{row['과목']}</b><br><span style='font-size:11px;'>{selected_year} {selected_semester} | 평균:{row['평균']}</span>",
                                 x=0.5, xanchor='center'
                             ),
                             yaxis=dict(range=[0, max(max(percents)+20, 50)], title="비율(%)"),
-                            height=330,
+                            height=350,
                             margin=dict(l=10, r=10, t=80, b=20),
                             template="plotly_white",
-                            showlegend=False,
-                            # 인쇄 시 배경을 하얗게 유지
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            plot_bgcolor='rgba(0,0,0,0)'
+                            showlegend=False
                         )
-                        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                        
+                        # 차트 출력 (다운로드 기능 활성화)
+                        st.plotly_chart(
+                            fig, 
+                            use_container_width=True, 
+                            config={
+                                'displaylogo': False,
+                                'modeBarButtonsToAdd': ['toImage'], # 이미지 다운로드 버튼 강조
+                                'toImageButtonOptions': {
+                                    'format': 'png', # 저장 형식
+                                    'filename': f"{selected_year}_{selected_semester}_{row['과목']}", # 파일명 자동 지정
+                                    'scale': 2 # 해상도 (2배)
+                                }
+                            }
+                        )
 
         with st.expander("📝 데이터 테이블"):
             st.dataframe(df)
