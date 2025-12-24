@@ -46,7 +46,7 @@ if uploaded_file is not None:
                 break
         
         if data_start_idx == -1:
-            st.error("⚠️ 데이터 헤더를 찾을 수 없습니다. 나이스 원본 파일을 확인해 주세요.")
+            st.error("⚠️ 데이터 헤더를 찾을 수 없습니다.")
             st.stop()
 
         # 데이터 추출
@@ -69,9 +69,7 @@ if uploaded_file is not None:
         num_subjects = len(df)
         num_cols = 4
         num_rows = math.ceil(num_subjects / num_cols)
-
-        # 에러 방지: vertical_spacing 자동 계산 (행이 많을수록 작게 설정)
-        v_space = min(0.05, 0.8 / num_rows) if num_rows > 1 else 0.1
+        v_space = min(0.06, 0.9 / num_rows) if num_rows > 1 else 0.1
 
         fig = make_subplots(
             rows=num_rows, cols=num_cols,
@@ -97,19 +95,21 @@ if uploaded_file is not None:
                     textposition='auto',
                     marker_color=colors,
                     showlegend=False,
-                    textfont=dict(size=20, color='black', family="Arial Black")
+                    textfont=dict(size=22, color='black', family="Arial Black")
                 ),
                 row=curr_row, col=curr_col
             )
 
-            # 과목명을 그래프 내부(상단)에 삽입 (에러 방지용 xref/yref 설정)
+            # [수정] 과목명 폰트 크기 1.5배 확대 (18px -> 27px)
             fig.add_annotation(
                 text=f"<b>{row['과목']}</b>",
                 xref="x domain", yref="y domain",
-                x=0.5, y=0.92,
+                x=0.5, y=0.88,  # 폰트가 커졌으므로 위치를 약간 아래로 조정
                 showarrow=False,
-                font=dict(size=18, color="black"),
-                bgcolor="rgba(255,255,255,0.8)",
+                font=dict(size=27, color="black"), 
+                bgcolor="rgba(255,255,255,0.9)", # 배경 투명도를 낮춰 글자를 더 선명하게
+                bordercolor="black", # 과목명 박스에 얇은 테두리 추가
+                borderwidth=1,
                 row=curr_row, col=curr_col
             )
 
@@ -120,33 +120,33 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-        # 5. 전체 레이아웃 및 테두리/Y축 설정
+        # 5. 전체 레이아웃
         fig.update_layout(
             title=dict(
                 text=f"✨ {selected_year}학년도 {selected_semester} 성취도 분포 리포트",
                 x=0.5, y=0.98, xanchor='center', yanchor='top',
-                font=dict(size=50, color="black")
+                font=dict(size=55, color="black")
             ),
-            height=500 * num_rows, 
-            width=2200, 
+            height=550 * num_rows, 
+            width=2400, 
             template="plotly_white",
-            margin=dict(t=200, b=100, l=120, r=100),
+            margin=dict(t=220, b=120, l=130, r=100),
         )
 
-        # 모든 서브플롯에 테두리 및 Y축 제목 적용
+        # 테두리 및 축 설정
         fig.update_xaxes(
             showline=True, linewidth=2, linecolor='black', mirror=True,
-            tickfont=dict(size=22)
+            tickfont=dict(size=24)
         )
         fig.update_yaxes(
             showline=True, linewidth=2, linecolor='black', mirror=True,
             title_text="인원수 비율 (%)",
-            title_font=dict(size=18),
-            tickfont=dict(size=22), 
+            title_font=dict(size=20),
+            tickfont=dict(size=24), 
             range=[0, 115]
         )
 
-        # 6. 화면 출력 및 다운로드
+        # 6. 화면 출력
         st.plotly_chart(
             fig, 
             use_container_width=True, 
@@ -154,13 +154,13 @@ if uploaded_file is not None:
                 'displaylogo': False,
                 'toImageButtonOptions': {
                     'format': 'png',
-                    'filename': f"{selected_year}_{selected_semester}_성취도분포",
+                    'filename': f"{selected_year}_{selected_semester}_성취도분포_확대",
                     'scale': 1.5
                 }
             }
         )
 
     except Exception as e:
-        st.error(f"❌ 분석 오류가 발생했습니다: {e}")
+        st.error(f"❌ 분석 오류: {e}")
 else:
-    st.info("💡 파일을 업로드하면 오류 없이 리포트가 생성됩니다.")
+    st.info("💡 파일을 업로드하시면 과목명이 강조된 리포트가 생성됩니다.")
