@@ -5,7 +5,7 @@ import plotly.express as px
 # 페이지 설정
 st.set_page_config(page_title="고등학교 성취평가 과목별 성취도 분포 결과 시각화 인창고 aichem9제작", layout="wide")
 
-st.title("📊 과목별 성적 분포 성취도 시각화")
+st.title("📊 고등학교 성취평가 과목별 성취도 분포 결과 시각화 인창고 aichem9제작")
 st.write("나이스(NEIS)에서 다운로드한 성적 분포 파일(CSV 또는 XLSX)을 업로드하세요.")
 
 # 1. 파일 업로드 (csv와 xlsx 모두 허용)
