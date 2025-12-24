@@ -6,7 +6,7 @@ import math
 
 # 1. 페이지 설정
 st.set_page_config(
-    page_title="성취도 분포 시각화 마스터 - 인창고 aichem9",
+    page_title="성취도 분포 시각화 - 인창고 aichem9",
     layout="wide"
 )
 
@@ -20,7 +20,7 @@ with col1:
 with col2:
     selected_semester = st.selectbox("🏫 학기", ["1학기", "2학기"], index=1)
 
-st.info("💡 아래 마스터 차트 우측 상단의 **카메라 아이콘**을 클릭하면 모든 과목이 포함된 한 장의 이미지로 저장됩니다.")
+st.info("💡 우측 상단의 **카메라 아이콘**을 클릭하면 모든 차트가 포함된 고해상도 이미지가 저장됩니다.")
 st.divider()
 
 # 3. 파일 업로드
@@ -28,7 +28,7 @@ uploaded_file = st.file_uploader("나이스 성적 분포 파일(XLSX, CSV)을 �
 
 if uploaded_file is not None:
     try:
-        # 데이터 읽기
+        # 데이터 읽기 로직
         if uploaded_file.name.endswith('.csv'):
             try:
                 df_raw = pd.read_csv(uploaded_file, header=None, encoding='cp949')
@@ -49,7 +49,7 @@ if uploaded_file is not None:
             st.error("⚠️ 데이터 헤더를 찾을 수 없습니다.")
             st.stop()
 
-        # 데이터 추출 (빈칸 발생 시 즉시 중단)
+        # 데이터 추출 (빈칸 시 중단)
         extracted_rows = []
         for i in range(data_start_idx, len(df_raw)):
             row = df_raw.iloc[i]
@@ -70,23 +70,20 @@ if uploaded_file is not None:
         num_cols = 4
         num_rows = math.ceil(num_subjects / num_cols)
 
-        # 서브플롯 제목 생성
-        subplot_titles = []
-        for _, row in df.iterrows():
-            subplot_titles.append(f"<b>{row['과목']}</b> (평균:{row['평균']})")
+        # 서브플롯 제목 (폰트 크기 고려하여 여유있게 배치)
+        subplot_titles = [f"<b>{row['과목']}</b> (평균:{row['평균']})" for _, row in df.iterrows()]
 
-        # 마스터 피규어 생성
         fig = make_subplots(
             rows=num_rows, cols=num_cols,
             subplot_titles=subplot_titles,
-            vertical_spacing=0.05,  # 상하 간격
-            horizontal_spacing=0.05 # 좌우 간격
+            vertical_spacing=0.1,   # 텍스트가 커지므로 간격을 더 넓힘
+            horizontal_spacing=0.07 
         )
 
         categories = ['A', 'B', 'C', 'D', 'E']
         colors = ['#4C78A8', '#72B7B2', '#F58518', '#E45756', '#949494']
 
-        # 각 과목 데이터를 서브플롯에 추가
+        # 데이터 추가
         for idx, (_, row) in enumerate(df.iterrows()):
             curr_row = (idx // num_cols) + 1
             curr_col = (idx % num_cols) + 1
@@ -94,7 +91,6 @@ if uploaded_file is not None:
             total = sum([row[c] for c in categories])
             percents = [(row[cat] / total * 100) if total > 0 else 0 for cat in categories]
 
-            # 막대 그래프 추가
             fig.add_trace(
                 go.Bar(
                     x=categories,
@@ -102,32 +98,43 @@ if uploaded_file is not None:
                     text=[f"{p:.1f}%" for p in percents],
                     textposition='auto',
                     marker_color=colors,
-                    showlegend=False
+                    showlegend=False,
+                    # 막대 위 숫자 폰트 크기 (기존 대비 약 2배)
+                    textfont=dict(size=18, color='black', family="Arial Black")
                 ),
                 row=curr_row, col=curr_col
             )
 
-            # 32.8% 보조선 추가
+            # 32.8% 보조선
             fig.add_shape(
                 type="line", x0=-0.5, x1=4.5, y0=32.8, y1=32.8,
-                line=dict(color="Red", width=1.5, dash="dash"),
+                line=dict(color="Red", width=2.5, dash="dash"),
                 row=curr_row, col=curr_col
             )
 
-        # 5. 마스터 차트 전체 레이아웃 설정
+        # 5. 전체 레이아웃 및 폰트 설정
         fig.update_layout(
             title=dict(
-                text=f"✨ {selected_year}학년도 {selected_semester} 성취도 분포 마스터 리포트",
-                x=0.5, font=dict(size=24)
+                text=f"✨ {selected_year}학년도 {selected_semester} 성취도 분포 리포트",
+                x=0.5,
+                font=dict(size=40, color="black") # 메인 제목 폰트 크기 대폭 확대
             ),
-            height=350 * num_rows, # 과목 수에 따라 높이 자동 조절
-            width=1200,            # 전체 너비 고정
+            height=450 * num_rows, # 텍스트가 커졌으므로 각 행의 높이를 늘림
+            width=1600,            # 전체 너비도 충분히 확보
             template="plotly_white",
-            margin=dict(t=100, b=50, l=50, r=50)
+            margin=dict(t=150, b=100, l=100, r=100),
+            # 전체 기본 폰트 설정 (축 숫자 등)
+            font=dict(size=18, color="black") 
         )
-        fig.update_yaxes(range=[0, 100], title="비율(%)")
 
-        # 6. 화면 출력 및 다운로드 설정
+        # 서브플롯 제목(과목명) 폰트 크기 조절
+        fig.update_annotations(font=dict(size=24, color="black"))
+
+        # X, Y축 라벨 폰트 조절
+        fig.update_xaxes(tickfont=dict(size=18), title_font=dict(size=20))
+        fig.update_yaxes(tickfont=dict(size=18), title_font=dict(size=20), range=[0, 105])
+
+        # 6. 화면 출력
         st.plotly_chart(
             fig, 
             use_container_width=True, 
@@ -135,16 +142,13 @@ if uploaded_file is not None:
                 'displaylogo': False,
                 'toImageButtonOptions': {
                     'format': 'png',
-                    'filename': f"{selected_year}_{selected_semester}_성취도분포_전체",
-                    'scale': 2 # 고해상도 저장
+                    'filename': f"{selected_year}_{selected_semester}_성취도분포_대형",
+                    'scale': 2 # 저장 시 선명도 2배
                 }
             }
         )
 
-        with st.expander("📝 원본 데이터 확인"):
-            st.dataframe(df)
-
     except Exception as e:
         st.error(f"❌ 분석 오류: {e}")
 else:
-    st.warning("나이스 파일을 업로드하면 분석 마스터 리포트가 생성됩니다.")
+    st.warning("파일을 업로드하면 고해상도 리포트가 생성됩니다.")
