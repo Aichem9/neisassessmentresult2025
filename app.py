@@ -11,15 +11,14 @@ st.set_page_config(
 )
 
 # 2. 상단 제목 및 안내
-st.title("📊 성취평가제 선도 교원 연수를 위한 과목별 성취도 분포 결과 시각화")
+st.title("📊 과목별 성취도 분포 결과 시각화")
 st.markdown("#### 인창고 aichem9 제작")
 
-# 입력창 레이아웃 수정 (학년 선택 추가)
+# 입력창 레이아웃
 col1, col2, col3 = st.columns(3)
 with col1:
     selected_year = st.selectbox("📅 학년도 선택", [2024, 2025, 2026, 2027], index=1)
 with col2:
-    # [추가] 학년 선택 드롭다운 (1~3학년)
     selected_grade = st.selectbox("🙋 학년 선택", [1, 2, 3], index=0)
 with col3:
     selected_semester = st.selectbox("🏫 학기 선택", ["1학기", "2학기"], index=1)
@@ -74,7 +73,6 @@ if uploaded_file is not None:
         num_cols = 4
         num_rows = math.ceil(num_subjects / num_cols)
         
-        # 행 수에 따른 간격 자동 조정
         v_space = min(0.06, 0.9 / num_rows) if num_rows > 1 else 0.1
 
         fig = make_subplots(
@@ -106,11 +104,12 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-            # 과목명 내부 삽입 (폰트 크기 27px)
+            # [수정] 과목명 및 평균값 내부 삽입
+            # <br> 태그를 사용해 과목명 아래에 평균을 표시합니다.
             fig.add_annotation(
-                text=f"<b>{row['과목']}</b>",
+                text=f"<b>{row['과목']}</b><br><span style='font-size:22px; color:blue;'>평균: {row['평균']:.1f}</span>",
                 xref="x domain", yref="y domain",
-                x=0.5, y=0.88,
+                x=0.5, y=0.85, # 텍스트가 두 줄이므로 위치를 살짝 아래로 조정
                 showarrow=False,
                 font=dict(size=27, color="black"),
                 bgcolor="rgba(255,255,255,0.9)",
@@ -126,47 +125,9 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-        # 5. 전체 레이아웃 (제목에 학년 반영)
+        # 5. 전체 레이아웃
         fig.update_layout(
             title=dict(
                 text=f"✨ {selected_year}학년도 {selected_grade}학년 {selected_semester} 성취도 분포 리포트",
                 x=0.5, y=0.98, xanchor='center', yanchor='top',
-                font=dict(size=55, color="black")
-            ),
-            height=550 * num_rows, 
-            width=2400, 
-            template="plotly_white",
-            margin=dict(t=220, b=120, l=130, r=100),
-        )
-
-        # 모든 서브플롯 테두리 및 축 설정
-        fig.update_xaxes(
-            showline=True, linewidth=2, linecolor='black', mirror=True,
-            tickfont=dict(size=24)
-        )
-        fig.update_yaxes(
-            showline=True, linewidth=2, linecolor='black', mirror=True,
-            title_text="인원수 비율 (%)",
-            title_font=dict(size=20),
-            tickfont=dict(size=24), 
-            range=[0, 115]
-        )
-
-        # 6. 화면 출력
-        st.plotly_chart(
-            fig, 
-            use_container_width=True, 
-            config={
-                'displaylogo': False,
-                'toImageButtonOptions': {
-                    'format': 'png',
-                    'filename': f"{selected_year}_{selected_grade}학년_{selected_semester}_성취도분포",
-                    'scale': 1.5
-                }
-            }
-        )
-
-    except Exception as e:
-        st.error(f"❌ 분석 오류: {e}")
-else:
-    st.info("💡 파일을 업로드하면 선택한 학년 정보가 포함된 리포트가 생성됩니다.")
+                font
