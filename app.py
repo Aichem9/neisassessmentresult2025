@@ -39,40 +39,36 @@ if uploaded_file is not None:
         else:
             df_raw = pd.read_excel(uploaded_file, header=None)
 
-        # [수정] 데이터 시작 위치 및 '평균' 컬럼(G열=index 6) 찾기
+        # 데이터 시작 위치 찾기
         data_start_idx = -1
         for i, row in df_raw.iterrows():
             row_vals = [str(v).strip() for v in row.values]
             if 'A' in row_vals and 'B' in row_vals:
                 data_start_idx = i + 1
                 break
-        
+
         if data_start_idx == -1:
             st.error("⚠️ 데이터 헤더를 찾을 수 없습니다. 나이스 원본 파일을 확인해 주세요.")
             st.stop()
 
-        # [수정] 데이터 추출 로직: G열(index 6)을 평균으로 확실히 지정
+        # 데이터 추출
         extracted_rows = []
         for i in range(data_start_idx, len(df_raw)):
             row = df_raw.iloc[i]
             subject_name = str(row[0]).strip()
-            
-            # 빈 행이거나 합계/평균 행이면 중단/건너뛰기
+
             if not subject_name or subject_name in ['nan', 'None', ""]:
                 break
             if any(keyword in subject_name for keyword in ['합계', '소계']):
                 continue
-            
-            # 데이터 매핑 (나이스 XLS data 표준 인덱스 기반)
-            # 0:과목, 1:A, 2:B, 3:C, 4:D, 5:E, 6:평균 (G열)
+
             extracted_rows.append({
                 '과목': subject_name,
                 'A': row[1], 'B': row[2], 'C': row[3], 'D': row[4], 'E': row[5],
-                '평균': row[6] # G열 데이터
+                '평균': row[6]
             })
 
         df = pd.DataFrame(extracted_rows)
-        # 숫자형 변환
         for col in ['A', 'B', 'C', 'D', 'E', '평균']:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
@@ -94,7 +90,7 @@ if uploaded_file is not None:
         for idx, (_, row) in enumerate(df.iterrows()):
             curr_row = (idx // num_cols) + 1
             curr_col = (idx % num_cols) + 1
-            
+
             total = sum([row[c] for c in categories])
             percents = [(row[cat] / total * 100) if total > 0 else 0 for cat in categories]
 
@@ -111,8 +107,7 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-            # [핵심 수정] 과목명 및 평균값(G열 데이터) 표시
-            # 폰트 크기 27px, 평균값 강조
+            # 과목명 및 평균값 어노테이션
             fig.add_annotation(
                 text=f"<b>{row['과목']}</b><br><span style='color:blue;'>평균: {row['평균']:.1f}</span>",
                 xref="x domain", yref="y domain",
@@ -125,16 +120,43 @@ if uploaded_file is not None:
                 row=curr_row, col=curr_col
             )
 
-            # 23.9% 보조선
+            # ✅ 핵심 수정: 서브플롯 축 이름 명시적 계산
+            subplot_idx = (curr_row - 1) * num_cols + curr_col
+            x_ref = "x" if subplot_idx == 1 else f"x{subplot_idx}"
+            y_ref = "y" if subplot_idx == 1 else f"y{subplot_idx}"
+
+            # 32.8% 보조선 (주황색)
             fig.add_shape(
                 type="line",
-                x0=-0.5,
-                x1=4.5,
-                y0=23.9,
-                y1=23.9,
+                x0=-0.5, x1=4.5,
+                y0=32.8, y1=32.8,
+                xref=x_ref, yref=y_ref,
+                line=dict(color="OrangeRed", width=2, dash="dash"),
+            )
+            fig.add_annotation(
+                text="32.8%",
+                x=4.5, y=32.8,
+                xref=x_ref, yref=y_ref,
+                showarrow=False,
+                font=dict(size=16, color="OrangeRed"),
+                xanchor="right", yanchor="bottom",
+            )
+
+            # 23.9% 보조선 (빨간색)
+            fig.add_shape(
+                type="line",
+                x0=-0.5, x1=4.5,
+                y0=23.9, y1=23.9,
+                xref=x_ref, yref=y_ref,
                 line=dict(color="Red", width=2, dash="dash"),
-                row=curr_row,
-                col=curr_col
+            )
+            fig.add_annotation(
+                text="23.9%",
+                x=4.5, y=23.9,
+                xref=x_ref, yref=y_ref,
+                showarrow=False,
+                font=dict(size=16, color="Red"),
+                xanchor="right", yanchor="bottom",
             )
 
         # 5. 전체 레이아웃
@@ -144,8 +166,8 @@ if uploaded_file is not None:
                 x=0.5, y=0.98, xanchor='center', yanchor='top',
                 font=dict(size=55, color="black")
             ),
-            height=580 * num_rows, 
-            width=2400, 
+            height=580 * num_rows,
+            width=2400,
             template="plotly_white",
             margin=dict(t=220, b=120, l=130, r=100),
         )
