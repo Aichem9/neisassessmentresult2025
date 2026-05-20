@@ -127,9 +127,14 @@ if uploaded_file is not None:
 
             # 23.9% 보조선
             fig.add_shape(
-                type="line", x0=-0.5, x1=4.5, y0=23.9, y1=23.9,
+                type="line",
+                x0=-0.5,
+                x1=4.5,
+                y0=23.9,
+                y1=23.9,
                 line=dict(color="Red", width=2, dash="dash"),
-                row=curr_row, col=curr_col
+                row=curr_row,
+                col=curr_col
             )
 
         # 5. 전체 레이아웃
