@@ -11,12 +11,27 @@ st.set_page_config(
 )
 
 # 2. 상단 제목 및 안내
-st.title("📊 과목별 성취도 분포 결과 시각화")
+st.title("📊 고교 학점제 성취평가 학기말 성취도 분포 시각화")
 st.markdown("#### 인창고 aichem9 제작")
+
+# 후원 버튼
+st.markdown(
+    """
+    <div style="text-align:right; margin-top:-10px; margin-bottom:10px;">
+        <a href="https://www.buymeacoffee.com/aichem9" target="_blank"
+           style="display:inline-block; background:#FFDD00; color:#000000;
+                  padding:10px 16px; border-radius:8px; text-decoration:none;
+                  font-weight:700; font-size:15px;">
+            ☕ Buy me a coffee
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    selected_year = st.selectbox("📅 학년도 선택", [2024, 2025, 2026, 2027], index=1)
+    selected_year = st.number_input("📅 학년도 입력", min_value=2000, max_value=2100, value=2026, step=1)
 with col2:
     selected_grade = st.selectbox("🙋 학년 선택", [1, 2, 3], index=0)
 with col3:
